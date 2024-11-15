@@ -1,0 +1,7 @@
+data/
+Reference/
+pre_trained/
+dnn_predicts/
+
+.DS_Store
+.idea/
