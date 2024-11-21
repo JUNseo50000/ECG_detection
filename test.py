@@ -1,6 +1,7 @@
-import tensorflow as tf
 from sklearn.metrics import accuracy_score, recall_score, f1_score
+from decimal import Decimal
 import numpy as np
+
 
 from model import get_student_model, get_teacher_model
 import argparse
@@ -14,32 +15,65 @@ def find_optimal_threshold(args):
     model = get_teacher_model(test_seq.n_classes, weights_path=args.path_to_teacher_hdf5)
     # model = get_student_model(test_seq.n_classes, weights_path=args.path_to_student_hdf5)
 
-    threshold_range = np.arange(0.1, 1.0, 0.05)
-    best_threshold = 0.0
-    best_f1_score = 0.0
+    start = Decimal('0.2')
+    stop = Decimal('0.85')
+    step = Decimal('0.05')
+    threshold_range = np.array([float(start + i * step) for i in range(int((stop - start) / step))])  # Thresholds
+    print(f"threshold_range: {threshold_range}")
+
+    results = []  # List to store all metrics for each threshold
 
     for threshold in threshold_range:
         print(f"---------- threshold: {threshold}----------")
-        _, _, f1 = evaluate_model_performance(model, test_seq, threshold=threshold)
+        acc, recall, f1 = evaluate_model_performance(model, test_seq, threshold=threshold)
 
-        # Update best threshold if current F1-score is higher
-        if f1 > best_f1_score:
-            best_f1_score = f1
-            best_threshold = threshold
+        # Append the results as a dictionary for each threshold
+        results.append({
+            'threshold': threshold,
+            'f1_score': f1,
+            'accuracy': acc,
+            'recall': recall
+        })
+
+    # Sort the results by F1-score in descending order
+    results = sorted(results, key=lambda x: x['f1_score'], reverse=True)
+
+    # Print sorted results
+    print("Thresholds sorted by F1-score:")
+    for res in results:
+        print(
+            f"Threshold: {res['threshold']}, F1-score: {res['f1_score']}, Accuracy: {res['accuracy']}, Recall: {res['recall']}")
+
+    # Return the best threshold and its metrics
+    best_result = results[0]  # Top result after sorting
+    best_threshold = best_result['threshold']
+    best_f1_score = best_result['f1_score']
 
     print(f"Optimal Threshold: {best_threshold}")
     print(f"Best F1-score: {best_f1_score}")
     return best_threshold, best_f1_score
 
-def evaluate_model_performance(model, test_seq, threshold=0.5):
+def evaluate_model_performance(model, test_seq,):
     all_labels = []
     all_preds = []
+    class_thresholds = [0.2, 0.4, 0.2, 0.35, 0.25, 0.2]
 
     for x_batch, y_batch in test_seq:
-        preds = model(x_batch, training=False)
-        preds = (preds > threshold).numpy()
-        all_labels.extend(y_batch)  # No need for y_batch.numpy() here
+        preds = model(x_batch, training=False)  # TensorFlow tensor
+        # print(f"preds.shape: {preds.shape}")
+
+        # Convert the TensorFlow tensor to a NumPy array
+        preds = preds.numpy()  # Explicit conversion to NumPy array
+
+        # Apply thresholds
+        preds = np.array([
+            (preds[:, i] > class_thresholds[i]).astype(int) for i in range(len(class_thresholds))
+        ]).T  # Transpose to match the original shape (batch_size, n_classes)
+        # print(f"preds_np.shape: {preds.shape}")
+
+        all_labels.extend(y_batch)
         all_preds.extend(preds)
+
 
     # Convert lists to arrays for metric calculation
     # Multi-label -> No Flatten
@@ -55,16 +89,19 @@ def evaluate_model_performance(model, test_seq, threshold=0.5):
     true_positives = np.sum((all_preds == 1) & (all_labels == 1), axis=0) # axis=0 : sum by column
     false_negatives = np.sum((all_preds == 0) & (all_labels == 1), axis=0)
     false_positives = np.sum((all_preds == 1) & (all_labels == 0), axis=0)
-    recall_per_class = true_positives / (true_positives + false_negatives)
-    precision_per_class = true_positives / (true_positives + false_positives)
-    average_recall = np.mean(recall_per_class)
-    average_precision = np.mean(precision_per_class)
 
+    precision_per_class = true_positives / (true_positives + false_positives)
+    recall_per_class = true_positives / (true_positives + false_negatives)
     f1_per_class = 2 * (precision_per_class * recall_per_class) / (precision_per_class + recall_per_class)
+
+    average_precision = np.mean(precision_per_class)
+    average_recall = np.mean(recall_per_class)
     average_f1_score = np.mean(f1_per_class)
 
+    print(f"precision_per_class: {precision_per_class}")
     print(f"Recall per class: {recall_per_class}")
     print(f"F1 per class: {f1_per_class}")
+    print(f"average_precision: {average_precision}")
     print(f"average_recall: {average_recall}")
     print(f"average_f1_score: {average_f1_score}")
 
@@ -113,5 +150,5 @@ if __name__ == "__main__":
     parser.add_argument('--quantization', type=bool, default=False, help='Whether to apply model Quantization')
     args = parser.parse_args()
 
-    # compare_models(args)
-    find_optimal_threshold(args)
+    compare_models(args)
+    # find_optimal_threshold(args)

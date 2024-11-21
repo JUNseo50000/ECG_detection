@@ -1,11 +1,11 @@
 import numpy as np
-import warnings
 import argparse
-warnings.filterwarnings("ignore")
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 from datasets import ECGSequence
 
+# import warnings
+# warnings.filterwarnings("ignore")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get performance on test set from hdf5')

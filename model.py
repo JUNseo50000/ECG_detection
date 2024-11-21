@@ -147,11 +147,12 @@ def get_student_model(n_classes, last_layer='sigmoid', weights_path=None, n_lead
         x = Activation('relu')(x)
         x, _ = ResidualUnit(256, 16, kernel_size=kernel_size,
                             kernel_initializer=kernel_initializer)([x, x])
-        x, _ = ResidualUnit(128, 32, kernel_size=kernel_size,
+        x, _ = ResidualUnit(64, 32, kernel_size=kernel_size,
                             kernel_initializer=kernel_initializer)([x, x])
-        x, _ = ResidualUnit(64, 64, kernel_size=kernel_size,
+        x, _ = ResidualUnit(16, 64, kernel_size=kernel_size,
                             kernel_initializer=kernel_initializer)([x, x])
-
+        x, _ = ResidualUnit(4, 128, kernel_size=kernel_size,
+                            kernel_initializer=kernel_initializer)([x, x])
     # Flatten and output layer
     x = Flatten()(x)
     diagn = Dense(n_classes, activation=last_layer, kernel_initializer=kernel_initializer)(x)

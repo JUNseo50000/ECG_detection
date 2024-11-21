@@ -1,3 +1,4 @@
+import decimal
 import optuna
 import os
 import argparse
@@ -9,6 +10,24 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import (TensorBoard, CSVLogger)
 from model import get_student_model, get_teacher_model
 from datasets import ECGSequence
+
+''' version check for requirements'''
+import numpy as np
+import sklearn
+import scipy
+import h5py
+print("os Version:", os.__version__)
+print("argparse Version:", argparse.__version__)
+print("pandas Version:", pd.__version__)
+print("tensorflow Version:", tf.__version__)
+print("numpy Version:", np.__version__)
+print("decimal version", decimal.__version__)
+print("sklearn version", sklearn.__version__)
+print("scipy version", scipy.__version__)
+print("h5py version", h5py.__version__)
+print("optuna version", optuna.__version__)
+exit()
+
 
 def verify_teacher_model(teacher_model, valid_seq):
     '''

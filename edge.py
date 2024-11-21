@@ -149,7 +149,6 @@ def categorize_ecg_condition(analysis_results):
         bradycardia = any(rr is not None and rr > bradycardia_threshold for rr in rr_intervals)
         tachycardia = any(rr is not None and rr < tachycardia_threshold for rr in rr_intervals)
         # atrial_fibrillation = (all(p is None for p in p_peaks) or rr_rmssd > threshold_rmssd) if p_peaks else False
-        # atrial_fibrillation = (all(p is None for p in p_peaks) or rr_rmssd > threshold_rmssd) if p_peaks else False
 
         conditions = {
             'AV Block': av_block,
@@ -240,4 +239,3 @@ if __name__ == '__main__':
 
     # save_analysis_results(args)
     find_optimal_threshold(args)
-
